@@ -41,9 +41,18 @@ public class Server {
         clients.remove(clientHandler);
     }
 
-    public void broadcastMessage(String msg) {
+    public void broadcastMessage(String username, String message) {
         for (ClientHandler c : clients) {
-            c.sendMsg(msg);
+            c.sendMsg(username  + ": " + message);
         }
+    }
+
+    public ClientHandler getClientFromName( String message) {
+        for (ClientHandler c: this.clients) {
+            if (message.startsWith(c.getUsername())) {
+                return c;
+            }
+        }
+        return null;
     }
 }
