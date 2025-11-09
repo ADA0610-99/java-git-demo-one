@@ -16,6 +16,10 @@ public class Server {
         clients = new CopyOnWriteArrayList<>();
     }
 
+    public List<ClientHandler> getClients() {
+        return clients;
+    }
+
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Сервер запустился на порту: " + port);
