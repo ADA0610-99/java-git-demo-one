@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 
 
 public class ClientHandler {
@@ -39,10 +40,12 @@ public class ClientHandler {
                             sendMsg("/exitOk");
                             break;
                         }
+                        if (message.startsWith("/w ") && server.getClientFromName(message.substring(3))!= null) {
+                            String[] token = message.split(" ", 3);
+                            server.getClientFromName(message.substring(3)).sendMsg(token[2]);
+                        }
 
-                    } else {
-                        server.broadcastMessage(username + ": " + message);
-                    }
+                    } else server.broadcastMessage(username, message);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -51,6 +54,8 @@ public class ClientHandler {
             }
         }).start();
     }
+
+
 
     public void sendMsg(String msg) {
         try {
