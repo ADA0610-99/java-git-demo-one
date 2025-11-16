@@ -26,6 +26,14 @@ public class Client {
                             if (message.startsWith("/exitOk")) {
                                 break;
                             }
+                            if (message.startsWith("/authOk ")) {
+                                System.out.println("Удалось успешно войти в чат под именем "
+                                + message.split(" ")[1]);
+                            }
+                            if (message.startsWith("/regok")) {
+                                System.out.println("Удалось успешно зарегистрироваться под именем "
+                                        + message.split(" ")[1]);
+                            }
                         } else {
                             System.out.println(message);
                         }
