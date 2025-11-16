@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
@@ -60,17 +61,22 @@ public class ClientHandler {
                             }
                             continue;
                         }
-                        if (message.startsWith("/reg ")){
+                        if (message.startsWith("/reg ")) {
                             String[] token = message.split(" ");
-                            if (token.length!=4){
+                            if (token.length != 5) {
                                 sendMsg("Неверный формат команды /req");
                                 continue;
                             }
+                            if (!ClientRole.isItClientRole(token[4])) {
+                                sendMsg("Роль задана неверно!");
+                                continue;
+                            }
                             if (server.getAutenticatedProvider()
-                                    .register(this, token[1], token[2], token[3])){
+                                    .register(this, token[1], token[2], token[3], ClientRole.valueOf(token[4]))) {
                                 authenticated = true;
                                 sendMsg("Вы подключились сником: " + username);
                                 break;
+
                             }
                         }
                     }
@@ -83,6 +89,21 @@ public class ClientHandler {
                             sendMsg("/exitOk");
                             break;
                         }
+                        if (message.startsWith("/kick")) {
+                            String[] token = message.split(" ");
+                            if (token.length < 2) {
+                                sendMsg("Введите username");
+                                continue;
+                            }
+                            if (server.getAutenticatedProvider().isUsernAdmin(username)) {
+                                server.getClientFromName(token[1]).sendMsg("/kickOk");
+                                disconnect(server.getClientFromName(token[1]));
+                                sendMsg("/kickok" + " " + token[1]);
+                                continue;
+                            } else {
+                                sendMsg("Кикать могут только админы!");
+                            }
+                        }
                         if (message.startsWith("/w ") && server.getClientFromName(message.substring(3)) != null) {
                             String[] token = message.split(" ", 3);
                             server.getClientFromName(message.substring(3)).sendMsg(token[2]);
@@ -92,9 +113,13 @@ public class ClientHandler {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
-                disconnect();
+                disconnect(this);
             }
         }).start();
+    }
+
+    private void setAuthenticated(boolean bool) {
+        this.authenticated = bool;
     }
 
 
@@ -106,25 +131,26 @@ public class ClientHandler {
         }
     }
 
-    public void disconnect() {
-        server.unsubscribe(this);
+
+    public void disconnect(ClientHandler clientHandler) {
+        server.unsubscribe(clientHandler);
         try {
-            if (in != null) {
-                in.close();
+            if (clientHandler.in != null) {
+                clientHandler.in.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         try {
-            if (out != null) {
-                out.close();
+            if (clientHandler.out != null) {
+                clientHandler.out.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         try {
-            if (socket != null) {
-                socket.close();
+            if (clientHandler.socket != null) {
+                clientHandler.socket.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
