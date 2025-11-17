@@ -15,6 +15,7 @@ public class ClientHandler {
     private Server server;
     private String username;
     private Boolean authenticated;
+    private ClientRole role;
 
     public String getUsername() {
         return this.username;
@@ -24,12 +25,17 @@ public class ClientHandler {
         this.username = username;
     }
 
+    public void setRole(ClientRole role) {
+        this.role = role;
+    }
+
     public ClientHandler(Socket socket, Server server) throws IOException {
         this.socket = socket;
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
         this.server = server;
         this.username = "user" + socket.getPort();
+        this.role = ClientRole.USER;
 
 
         new Thread(() -> {
@@ -67,7 +73,7 @@ public class ClientHandler {
                                 sendMsg("Неверный формат команды /req");
                                 continue;
                             }
-                            if (!ClientRole.isItClientRole(token[4])) {
+                            if (!token[4].equals(ClientRole.ADMIN.name()) && !token[4].equals(ClientRole.USER.name())) {
                                 sendMsg("Роль задана неверно!");
                                 continue;
                             }
@@ -95,10 +101,9 @@ public class ClientHandler {
                                 sendMsg("Введите username");
                                 continue;
                             }
-                            if (server.getAutenticatedProvider().isUsernAdmin(username)) {
-                                server.getClientFromName(token[1]).sendMsg("/kickOk");
+                            if (this.role == ClientRole.ADMIN) {
+                                server.getClientFromName(token[1]).sendMsg("/kickOk вас отсоединили");
                                 disconnect(server.getClientFromName(token[1]));
-                                sendMsg("/kickok" + " " + token[1]);
                                 continue;
                             } else {
                                 sendMsg("Кикать могут только админы!");

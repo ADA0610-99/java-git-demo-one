@@ -37,13 +37,10 @@ public class Client {
                                         + message.split(" ")[1]);
                             }
                             if (message.startsWith("/kickOk")) {
-                                System.out.println("Вас отсоединили!");
+                                String [] str= message.split(" ",2);
+                                System.out.println(str[1]);
                                 active = false;
                                 break;
-                            }
-                            if (message.startsWith("/kickok")) {
-                                System.out.println("Вы отсоединили: "
-                                        + message.split(" ")[1]);
                             }
                         } else {
                             System.out.println(message);

@@ -7,5 +7,5 @@ public interface AutenticatedProvider {
 
     boolean register(ClientHandler clientHandler, String login, String password, String username, ClientRole role);
 
-    boolean isUsernAdmin(String username);
+    // boolean isUsernAdmin(String username);
 }

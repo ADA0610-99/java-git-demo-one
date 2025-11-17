@@ -40,15 +40,15 @@ public class InMamoryAuthenticatedProvider implements AutenticatedProvider {
         return false;
     }
 
-    @Override
-    public boolean isUsernAdmin(String username) {
-        for (User u : users) {
-            if (u.username.equals(username) && u.role.name().equals(ClientRole.ADMIN.name())) {
-                return true;
-            }
-        }
-        return false;
-    }
+//    @Override
+//    public boolean isUsernAdmin(String username) {
+//        for (User u : users) {
+//            if (u.username.equals(username) && u.role == ClientRole.ADMIN) {
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     public InMamoryAuthenticatedProvider(Server server) {
         users = new CopyOnWriteArrayList<>();
@@ -67,6 +67,16 @@ public class InMamoryAuthenticatedProvider implements AutenticatedProvider {
         return null;
     }
 
+    private ClientRole getRoleByLoginAndPassword(String login, String password) {
+        for (User u : users) {
+            if (u.login.equalsIgnoreCase(login) && u.password.equals(password)) {
+                return u.role;
+            }
+        }
+        return null;
+    }
+
+
     @Override
     public void initialize() {
         System.out.println("InMemoryAuthenticatedProvider");
@@ -84,6 +94,7 @@ public class InMamoryAuthenticatedProvider implements AutenticatedProvider {
             return false;
         }
         clientHandler.setUsername(authUsername);
+        clientHandler.setRole(getRoleByLoginAndPassword(login, password));
         server.subscribe(clientHandler);
         clientHandler.sendMsg("/authok" + authUsername);
         return true;
@@ -114,6 +125,7 @@ public class InMamoryAuthenticatedProvider implements AutenticatedProvider {
         }
         users.add(new User(login, password, username, role));
         clientHandler.setUsername(username);
+        clientHandler.setRole(getRoleByLoginAndPassword(login, password));
         server.subscribe(clientHandler);
         clientHandler.sendMsg("/regok " + username);
         return true;
