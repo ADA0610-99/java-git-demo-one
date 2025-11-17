@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
@@ -14,6 +15,7 @@ public class ClientHandler {
     private Server server;
     private String username;
     private Boolean authenticated;
+    private ClientRole role;
 
     public String getUsername() {
         return this.username;
@@ -23,12 +25,17 @@ public class ClientHandler {
         this.username = username;
     }
 
+    public void setRole(ClientRole role) {
+        this.role = role;
+    }
+
     public ClientHandler(Socket socket, Server server) throws IOException {
         this.socket = socket;
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
         this.server = server;
         this.username = "user" + socket.getPort();
+        this.role = ClientRole.USER;
 
 
         new Thread(() -> {
@@ -60,17 +67,22 @@ public class ClientHandler {
                             }
                             continue;
                         }
-                        if (message.startsWith("/reg ")){
+                        if (message.startsWith("/reg ")) {
                             String[] token = message.split(" ");
-                            if (token.length!=4){
+                            if (token.length != 5) {
                                 sendMsg("Неверный формат команды /req");
                                 continue;
                             }
+                            if (!token[4].equals(ClientRole.ADMIN.name()) && !token[4].equals(ClientRole.USER.name())) {
+                                sendMsg("Роль задана неверно!");
+                                continue;
+                            }
                             if (server.getAutenticatedProvider()
-                                    .register(this, token[1], token[2], token[3])){
+                                    .register(this, token[1], token[2], token[3], ClientRole.valueOf(token[4]))) {
                                 authenticated = true;
                                 sendMsg("Вы подключились сником: " + username);
                                 break;
+
                             }
                         }
                     }
@@ -83,6 +95,20 @@ public class ClientHandler {
                             sendMsg("/exitOk");
                             break;
                         }
+                        if (message.startsWith("/kick")) {
+                            String[] token = message.split(" ");
+                            if (token.length < 2) {
+                                sendMsg("Введите username");
+                                continue;
+                            }
+                            if (this.role == ClientRole.ADMIN) {
+                                server.getClientFromName(token[1]).sendMsg("/kickOk вас отсоединили");
+                                disconnect(server.getClientFromName(token[1]));
+                                continue;
+                            } else {
+                                sendMsg("Кикать могут только админы!");
+                            }
+                        }
                         if (message.startsWith("/w ") && server.getClientFromName(message.substring(3)) != null) {
                             String[] token = message.split(" ", 3);
                             server.getClientFromName(message.substring(3)).sendMsg(token[2]);
@@ -92,9 +118,13 @@ public class ClientHandler {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
-                disconnect();
+                disconnect(this);
             }
         }).start();
+    }
+
+    private void setAuthenticated(boolean bool) {
+        this.authenticated = bool;
     }
 
 
@@ -106,25 +136,26 @@ public class ClientHandler {
         }
     }
 
-    public void disconnect() {
-        server.unsubscribe(this);
+
+    public void disconnect(ClientHandler clientHandler) {
+        server.unsubscribe(clientHandler);
         try {
-            if (in != null) {
-                in.close();
+            if (clientHandler.in != null) {
+                clientHandler.in.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         try {
-            if (out != null) {
-                out.close();
+            if (clientHandler.out != null) {
+                clientHandler.out.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         try {
-            if (socket != null) {
-                socket.close();
+            if (clientHandler.socket != null) {
+                clientHandler.socket.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

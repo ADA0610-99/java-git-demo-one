@@ -10,9 +10,11 @@ public class Client {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+    private boolean active;
 
 
     public Client() {
+        active = true;
         Scanner scanner = new Scanner(System.in);
         try {
             Socket socket = new Socket("localhost", 8189);
@@ -26,13 +28,19 @@ public class Client {
                             if (message.startsWith("/exitOk")) {
                                 break;
                             }
-                            if (message.startsWith("/authOk ")) {
+                            if (message.startsWith("/authok ")) {
                                 System.out.println("Удалось успешно войти в чат под именем "
-                                + message.split(" ")[1]);
+                                        + message.split(" ")[1]);
                             }
                             if (message.startsWith("/regok")) {
                                 System.out.println("Удалось успешно зарегистрироваться под именем "
                                         + message.split(" ")[1]);
+                            }
+                            if (message.startsWith("/kickOk")) {
+                                String [] str= message.split(" ",2);
+                                System.out.println(str[1]);
+                                active = false;
+                                break;
                             }
                         } else {
                             System.out.println(message);
@@ -45,7 +53,7 @@ public class Client {
                 }
             }).start();
 
-            while (true) {
+            while (active) {
                 String message = scanner.nextLine();
                 out.writeUTF(message);
                 if (message.startsWith("/exit")) {

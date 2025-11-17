@@ -58,6 +58,7 @@ public class Server {
         return false;
     }
 
+
     public ClientHandler getClientFromName(String message) {
         for (ClientHandler c : this.clients) {
             if (message.startsWith(c.getUsername())) {
@@ -67,7 +68,7 @@ public class Server {
         return null;
     }
 
-    public AutenticatedProvider getAutenticatedProvider (){
+    public AutenticatedProvider getAutenticatedProvider() {
         return this.autenticatedProvider;
     }
 }
