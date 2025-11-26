@@ -1,5 +1,6 @@
 package ru.otus.chat.server;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -21,6 +22,15 @@ public class InMamoryAuthenticatedProvider implements AutenticatedProvider {
 
     private List<User> users;
     private Server server;
+    private static final String DB_URL = "jdbc:postgresql://localhost:5432/otus_db";
+    private static final String DB_USER = "postgres";
+    private static final String DB_PASS = "Zelenodolsk9";
+    private static final String USER_QUERY = "select us1.*, r.name_role  from role r \n" +
+            "right join usertorole u on r.id = u.id_role \n" +
+            "right join user_list us1 on u.id_user = us1.id ";
+
+    private final Connection connection;
+
 
     private boolean isLoginAlredyExists(String login) {
         for (User u : users) {
@@ -40,22 +50,31 @@ public class InMamoryAuthenticatedProvider implements AutenticatedProvider {
         return false;
     }
 
-//    @Override
-//    public boolean isUsernAdmin(String username) {
-//        for (User u : users) {
-//            if (u.username.equals(username) && u.role == ClientRole.ADMIN) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
 
-    public InMamoryAuthenticatedProvider(Server server) {
-        users = new CopyOnWriteArrayList<>();
-        users.add(new User("qwe", "qwe", "qwe1", ClientRole.ADMIN));
-        users.add(new User("asd", "asd", "asd1", ClientRole.USER));
-        users.add(new User("zxc", "zxc", "zxc1", ClientRole.USER));
+    public InMamoryAuthenticatedProvider(Server server) throws SQLException {
+        this.connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        users = getAll();
         this.server = server;
+    }
+
+    private List<User> getAll () {
+        List<User> users = new ArrayList<>();
+        try(Statement statement = connection.createStatement()){
+            try(ResultSet res = statement.executeQuery(USER_QUERY)) {
+                while (res.next()){
+                    String login = res.getString(3);
+                    String password = res.getString(2);
+                    String username = res.getString(4);
+                    ClientRole role = ClientRole.valueOf(res.getString(5));
+                    User user = new User(login, password, username, role);
+                    users.add(user);
+                }
+
+            }
+        } catch (SQLException e){
+            throw new RuntimeException(e);
+        }
+        return users;
     }
 
     private String getUsernameByLoginAndPassword(String login, String password) {
