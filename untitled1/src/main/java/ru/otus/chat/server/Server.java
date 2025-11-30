@@ -16,7 +16,7 @@ public class Server {
     public Server(int port) throws SQLException {
         this.port = port;
         clients = new CopyOnWriteArrayList<>();
-        autenticatedProvider = new InMamoryAuthenticatedProvider(this);
+        autenticatedProvider = new DbAuthenticatedProvider(this);
     }
 
     public List<ClientHandler> getClients() {
